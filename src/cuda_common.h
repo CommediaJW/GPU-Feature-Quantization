@@ -27,30 +27,27 @@
     }                                                                    \
   }
 
-#define BIFEAT_VALUE_TYPE_SWITCH(TorchValType, ValType, ...)                  \
-  do {                                                                        \
-    if ((TorchValType) == torch::kUInt8) {                                    \
-      typedef u_int8_t ValType;                                               \
-      { __VA_ARGS__ }                                                         \
-    } else if ((TorchValType) == torch::kInt8) {                              \
-      typedef int8_t ValType;                                                 \
-      { __VA_ARGS__ }                                                         \
-    } else if ((TorchValType) == torch::kInt16) {                             \
-      typedef int16_t ValType;                                                \
-      { __VA_ARGS__ }                                                         \
-    } else if ((TorchValType) == torch::kInt32) {                             \
-      typedef int32_t ValType;                                                \
-      { __VA_ARGS__ }                                                         \
-    } else if ((TorchValType) == torch::kInt64) {                             \
-      typedef int64_t ValType;                                                \
-      { __VA_ARGS__ }                                                         \
-    } else if ((TorchValType) == torch::kFloat32) {                           \
-      typedef float ValType;                                                  \
-      { __VA_ARGS__ }                                                         \
-    } else {                                                                  \
-      LOG(FATAL)                                                              \
-          << "Value can only be uint8, int8, int16, int32, int64 or float32"; \
-    }                                                                         \
+#define BIFEAT_INT_TYPE_SWITCH(TorchIntType, IntType, ...)               \
+  do {                                                                   \
+    if ((TorchIntType) == torch::kUInt8) {                               \
+      typedef u_int8_t IntType;                                          \
+      { __VA_ARGS__ }                                                    \
+    } else if ((TorchIntType) == torch::kInt8) {                         \
+      typedef int8_t IntType;                                            \
+      { __VA_ARGS__ }                                                    \
+    } else if ((TorchIntType) == torch::kInt16) {                        \
+      typedef int16_t IntType;                                           \
+      { __VA_ARGS__ }                                                    \
+    } else if ((TorchIntType) == torch::kInt32) {                        \
+      typedef int32_t IntType;                                           \
+      { __VA_ARGS__ }                                                    \
+    } else if ((TorchIntType) == torch::kInt64) {                        \
+      typedef int64_t IntType;                                           \
+      { __VA_ARGS__ }                                                    \
+    } else {                                                             \
+      LOG(FATAL)                                                         \
+          << "Int can only be uint8 or int8 or int16 or int32 or int64"; \
+    }                                                                    \
   } while (0);
 
 #endif
