@@ -1,8 +1,6 @@
 import math
 import torch
 
-torch.ops.load_library("./build/libbifeat.so")
-
 
 def tensor_dim_slice(tensor, dim, s):
     return tensor[(slice(None), ) * (dim if dim >= 0 else dim + tensor.dim()) +
@@ -19,11 +17,17 @@ def packshape(shape, dim, mask, dtype):
     return shape, packed_size, nbits
 
 
-def packbits(tensor, dim=-1, mask=0b00000001, out=None, dtype=torch.uint8):
+def packbits(tensor,
+             dim=-1,
+             mask=0b00000001,
+             out=None,
+             dtype=torch.uint8,
+             device="cpu"):
     shape, packed_size, nbits = packshape(tensor.shape,
                                           dim=dim,
                                           mask=mask,
                                           dtype=dtype)
+    tensor = tensor.to(device)
     out = out.zero_() if out is not None else torch.zeros(
         shape, device=tensor.device, dtype=dtype)
     assert tuple(out.shape) == tuple(shape)
@@ -39,26 +43,44 @@ def packbits(tensor, dim=-1, mask=0b00000001, out=None, dtype=torch.uint8):
     return out
 
 
-def unpackbits(tensor, shape, dim=-1, mask=0b00000001):
+def unpackbits(tensor,
+               shape,
+               dim=-1,
+               mask=0b00000001,
+               dtype=torch.uint8,
+               device="cpu"):
     _, packed_size, nbits = packshape(shape,
                                       dim=dim,
                                       mask=mask,
                                       dtype=tensor.dtype)
-    return torch.ops.bifeat_ops._CAPI_UnpackBits(tensor, shape[1], packed_size,
-                                                 nbits)
+    tensor = tensor.to(device)
+    if device == "cuda":
+        return torch.ops.bifeat_ops._CAPI_unpack_bits(tensor, shape[1],
+                                                      packed_size, nbits)
+    else:
+        ts = []
+        for e in range(packed_size):
+            ts.append(((tensor >> (nbits * (packed_size - e - 1))
+                        ).bitwise_and_((1 << nbits) - 1)).narrow(
+                            dim, 0, (shape[dim] - e - 1) // packed_size + 1))
+        return torch.cat(ts, -1)
 
 
+# example
 if __name__ == '__main__':
-    shape = (10000, 2000)
+    torch.ops.load_library("./build/libbifeat.so")
+    torch.manual_seed(1)
+    shape = (5000, 128)
     K = 1
+    device = "cuda"
     for nbits in [1]:
         mask = (1 << nbits) - 1
         for dtype in [torch.uint8]:
             for k in range(K):
-                x = torch.randint(0, 1 << nbits, shape, dtype=dtype).cuda()
-                print(x)
-                y = packbits(x, mask=mask)
-                print(y)
-                z = unpackbits(y, mask=mask, shape=x.shape)
-                print(z)
+                x = torch.randint(0, 1 << nbits, shape, dtype=dtype).to(device)
+                print(x, x.shape)
+                y = packbits(x, mask=mask, device=device)
+                print(y, y.shape)
+                z = unpackbits(y, mask=mask, shape=x.shape, device=device)
+                print(z, z.shape)
                 print(x.equal(z))

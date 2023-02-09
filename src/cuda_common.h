@@ -50,4 +50,20 @@
     }                                                                    \
   } while (0);
 
+#define BIFEAT_VALUE_TYPE_SWITCH(TorchValType, ValType, ...)       \
+  do {                                                             \
+    if ((TorchValType) == torch::kInt32) {                         \
+      typedef int32_t ValType;                                     \
+      { __VA_ARGS__ }                                              \
+    } else if ((TorchValType) == torch::kInt64) {                  \
+      typedef int64_t ValType;                                     \
+      { __VA_ARGS__ }                                              \
+    } else if ((TorchValType) == torch::kFloat32) {                \
+      typedef float ValType;                                       \
+      { __VA_ARGS__ }                                              \
+    } else {                                                       \
+      LOG(FATAL) << "Value can only be int32 or int64 or float32"; \
+    }                                                              \
+  } while (0);
+
 #endif
